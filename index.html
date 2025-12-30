@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gıda Kurtarma Ajanı Demosu</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body { background-color: #f8f9fa; padding: 20px; }
+        .agent-card { border-left: 5px solid #0d6efd; background: white; padding: 20px; border-radius: 5px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        .price-box { font-size: 2rem; font-weight: bold; color: #198754; }
+        .log-box { background-color: #e9ecef; padding: 15px; border-radius: 5px; font-family: monospace; font-size: 0.9rem; }
+        .log-item { margin-bottom: 5px; border-bottom: 1px solid #dee2e6; padding-bottom: 5px; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="row mb-4">
+        <div class="col-12 text-center">
+            <h1>🤖 Gıda Tedarik Zinciri: Otonom Ajan</h1>
+            <p class="text-muted">Ajan Tabanlı (Agentic AI) Fiyatlandırma Simülasyonu</p>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-4">
+            <div class="card p-3">
+                <h5 class="card-title">📝 Ürün & Ortam Verileri</h5>
+                <hr>
+                
+                <div class="mb-3">
+                    <label class="form-label">Ürün Adı:</label>
+                    <input type="text" class="form-control" value="Taze Çilekli Pasta" disabled>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Başlangıç Fiyatı (TL):</label>
+                    <input type="number" class="form-control" id="startPrice" value="200" disabled>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label fw-bold text-primary">Kalan Tazelik Ömrü (%): <span id="freshVal">100</span>%</label>
+                    <input type="range" class="form-range" id="freshness" min="0" max="100" value="100" oninput="runAgent()">
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label fw-bold text-primary">Saat Kaç?: <span id="timeVal">14</span>:00</label>
+                    <input type="range" class="form-range" id="time" min="0" max="23" value="14" oninput="runAgent()">
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Hava Durumu:</label>
+                    <select class="form-select" id="weather" onchange="runAgent()">
+                        <option value="Güneşli">Güneşli ☀️</option>
+                        <option value="Yağmurlu">Yağmurlu ☔</option>
+                        <option value="Karlı">Karlı ❄️</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-8">
+            <div class="agent-card">
+                <div class="row text-center">
+                    <div class="col-6">
+                        <small class="text-muted">Başlangıç Fiyatı</small>
+                        <div class="h3 text-secondary">200 TL</div>
+                    </div>
+                    <div class="col-6 border-start">
+                        <small class="text-muted">Ajanın Belirlediği Fiyat</small>
+                        <div class="price-box" id="finalPrice">200 TL</div>
+                        <small id="discountBadge" class="badge bg-danger d-none">İndirim Aktif!</small>
+                    </div>
+                </div>
+            </div>
+
+            <br>
+
+            <div class="card">
+                <div class="card-header bg-dark text-white">
+                    🧠 Ajanın Karar Günlüğü (Decision Log)
+                </div>
+                <div class="card-body">
+                    <div id="logs" class="log-box">
+                        </div>
+                </div>
+            </div>
+            
+            <div id="alertBox" class="alert alert-danger mt-3 d-none text-center fw-bold">
+                📢 BİLDİRİM GÖNDERİLİYOR: "Bu ürünü kaçırma, bedavadan biraz pahalı!"
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function runAgent() {
+        // 1. Verileri Al
+        let startPrice = 200;
+        let freshness = parseInt(document.getElementById("freshness").value);
+        let time = parseInt(document.getElementById("time").value);
+        let weather = document.getElementById("weather").value;
+
+        // Görsel değerleri güncelle
+        document.getElementById("freshVal").innerText = freshness;
+        document.getElementById("timeVal").innerText = time;
+
+        let newPrice = startPrice;
+        let logs = [];
+
+        // --- AJANIN MANTIĞI (LOGIC) ---
+
+        // KURAL 1: Tazelik Kontrolü
+        if (freshness > 80) {
+            logs.push("✅ Ürün çok taze, standart fiyat uygulandı.");
+        } else if (freshness > 50) {
+            newPrice = newPrice * 0.90;
+            logs.push("⚠️ Tazelik %80'in altına düştü. %10 'Erken İndirim' uygulandı.");
+        } else if (freshness > 20) {
+            newPrice = newPrice * 0.60;
+            logs.push("📉 Ürün riskli bölgede (Orta Bayat). %40 'Kurtarma İndirimi' yapıldı.");
+        } else {
+            newPrice = newPrice * 0.30;
+            logs.push("🚨 ACİL DURUM: Ürün çürümek üzere! %70 'Son Şans İndirimi' devrede.");
+        }
+
+        // KURAL 2: Saat Kontrolü
+        if (time >= 22) {
+            newPrice = newPrice * 0.80;
+            logs.push("🌙 Kapanış saati (22:00+) yaklaştı. Ekstra %20 'Gece İndirimi' eklendi.");
+        }
+
+        // KURAL 3: Hava Durumu
+        if (weather === "Yağmurlu" || weather === "Karlı") {
+            newPrice = newPrice * 0.95;
+            logs.push("☔ Hava kötü (" + weather + "), talep düşük olabilir. Teşvik için %5 indirim eklendi.");
+        }
+
+        // Fiyatı tam sayı yap
+        newPrice = Math.floor(newPrice);
+
+        // --- SONUÇLARI EKRANA YAZ ---
+        document.getElementById("finalPrice").innerText = newPrice + " TL";
+        
+        // Logları temizle ve yeniden yaz
+        let logContainer = document.getElementById("logs");
+        logContainer.innerHTML = "";
+        logs.forEach(log => {
+            let p = document.createElement("div");
+            p.className = "log-item";
+            p.innerText = log;
+            logContainer.appendChild(p);
+        });
+
+        // Bildirim Kutusu Kontrolü
+        let alertBox = document.getElementById("alertBox");
+        if (newPrice < startPrice * 0.4) {
+            alertBox.classList.remove("d-none");
+        } else {
+            alertBox.classList.add("d-none");
+        }
+
+        // İndirim Rozeti
+        let badge = document.getElementById("discountBadge");
+        if (newPrice < startPrice) {
+            badge.classList.remove("d-none");
+        } else {
+            badge.classList.add("d-none");
+        }
+    }
+
+    // Sayfa açılınca bir kez çalıştır
+    runAgent();
+</script>
+
+</body>
+</html>
